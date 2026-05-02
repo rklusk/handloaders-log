@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Handloader's Log</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f4f0;
+  --bg-tertiary: #eeece6;
+  --text-primary: #1a1a18;
+  --text-secondary: #6b6a65;
+  --text-tertiary: #9e9d98;
+  --border-light: rgba(0,0,0,0.08);
+  --border-mid: rgba(0,0,0,0.14);
+  --border-strong: rgba(0,0,0,0.22);
+  --amber: #b8720a;
+  --amber-light: #fdf0d8;
+  --amber-mid: #e8940f;
+  --teal: #0f6e56;
+  --teal-light: #e1f5ee;
+  --blue: #185fa5;
+  --blue-light: #e6f1fb;
+  --coral: #993c1d;
+  --coral-light: #faece7;
+  --gray-light: #f1efe8;
+  --red: #a32d2d;
+  --red-light: #fcebeb;
+  --green: #3b6d11;
+  --green-light: #eaf3de;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.07);
+  --shadow-modal: 0 8px 40px rgba(0,0,0,0.18), 0 0 0 0.5px rgba(0,0,0,0.1);
+  --font: 'Georgia', serif;
+  --font-ui: system-ui, -apple-system, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1e1d1a;
+    --bg-secondary: #252420;
+    --bg-tertiary: #2c2b27;
+    --text-primary: #f0ede6;
+    --text-secondary: #9a9890;
+    --text-tertiary: #6a6860;
+    --border-light: rgba(255,255,255,0.07);
+    --border-mid: rgba(255,255,255,0.12);
+    --border-strong: rgba(255,255,255,0.2);
+    --amber: #e8940f;
+    --amber-light: #2d2210;
+    --amber-mid: #d4820c;
+    --teal-light: #0d2e23;
+    --teal: #1d9e75;
+    --blue-light: #0a1e35;
+    --blue: #4a9de0;
+    --coral-light: #2d1208;
+    --coral: #e06040;
+    --gray-light: #252420;
+    --red-light: #2d0f0f;
+    --red: #e05555;
+    --green-light: #111f06;
+    --green: #70b030;
+    --shadow: 0 1px 4px rgba(0,0,0,0.3), 0 0 0 0.5px rgba(255,255,255,0.05);
+    --shadow-modal: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.08);
+  }
+}
+
+html, body { height: 100%; }
+body { font-family: var(--font-ui); background: var(--bg-tertiary); color: var(--text-primary); font-size: 14px; line-height: 1.5; }
+
+.shell { display: flex; flex-direction: column; height: 100vh; max-width: 960px; margin: 0 auto; background: var(--bg-primary); box-shadow: 0 0 0 0.5px var(--border-light); }
+
+/* Topbar */
+.topbar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-bottom: 0.5px solid var(--border-light); background: var(--bg-primary); flex-shrink: 0; }
+.app-logo { width: 28px; height: 28px; background: var(--amber); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: 700; font-family: var(--font); }
+.app-name { font-family: var(--font); font-size: 15px; font-weight: bold; color: var(--text-primary); letter-spacing: -0.01em; }
+.app-name span { color: var(--amber); }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.save-indicator { font-size: 11px; color: var(--teal); opacity: 0; transition: opacity 0.3s; }
+.save-indicator.show { opacity: 1; }
+.export-btn { font-size: 11px; font-weight: 500; padding: 5px 12px; border-radius: var(--radius-sm); border: 0.5px solid var(--border-mid); background: none; color: var(--text-secondary); cursor: pointer; transition: background 0.15s; }
+.export-btn:hover { background: var(--bg-secondary); }
+
+/* Tabs */
+.tabbar { display: flex; border-bottom: 0.5px solid var(--border-light); background: var(--bg-primary); padding: 0 16px; flex-shrink: 0; overflow-x: auto; }
+.tab { padding: 10px 16px; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; border: none; background: none; color: var(--text-tertiary); border-bottom: 2px solid transparent; margin-bottom: -0.5px; white-space: nowrap; transition: color 0.15s; }
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+.content { flex: 1; overflow-y: auto; padding: 20px; }
+
+/* Section header */
+.sec-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.sec-title { font-family: var(--font); font-size: 17px; font-weight: bold; color: var(--text-primary); }
+.sec-count { font-size: 12px; color: var(--text-tertiary); font-family: var(--font-ui); font-weight: 400; margin-left: 6px; }
+
+/* Cards */
+.card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; box-shadow: var(--shadow); }
+.card:hover { border-color: var(--border-mid); box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0.5px rgba(0,0,0,0.08); }
+.card-hdr { display: flex; justify-content: space-between; align-items: flex-start; }
+.card-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.card-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.card-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+.card-meta span { font-size: 11px; color: var(--text-tertiary); }
+.card-note { font-size: 11px; color: var(--text-secondary); margin-top: 8px; padding-top: 8px; border-top: 0.5px solid var(--border-light); line-height: 1.5; }
+
+/* Badges */
+.badge { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+.b-amber { background: var(--amber-light); color: var(--amber); }
+.b-teal { background: var(--teal-light); color: var(--teal); }
+.b-blue { background: var(--blue-light); color: var(--blue); }
+.b-gray { background: var(--gray-light); color: var(--text-secondary); }
+.b-green { background: var(--green-light); color: var(--green); }
+.b-coral { background: var(--coral-light); color: var(--coral); }
+
+/* Search */
+.search { width: 100%; padding: 9px 14px; font-size: 13px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); margin-bottom: 14px; outline: none; transition: border-color 0.15s; }
+.search:focus { border-color: var(--amber); }
+.search::placeholder { color: var(--text-tertiary); }
+
+/* Stat grid */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 16px; }
+.stat-card { background: var(--bg-secondary); border-radius: var(--radius-sm); padding: 10px 12px; }
+.stat-lbl { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.stat-val { font-size: 22px; font-weight: 700; color: var(--text-primary); font-family: var(--font); }
+.stat-unit { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-ui); font-weight: 400; margin-left: 2px; }
+
+/* Buttons */
+.btn { font-size: 12px; font-weight: 600; padding: 7px 16px; border-radius: var(--radius-sm); border: none; cursor: pointer; transition: opacity 0.15s, transform 0.1s; letter-spacing: 0.02em; }
+.btn:active { transform: scale(0.97); }
+.btn-amber { background: var(--amber); color: white; }
+.btn-amber:hover { opacity: 0.88; }
+.btn-ghost { background: none; border: 0.5px solid var(--border-mid); color: var(--text-secondary); font-weight: 500; }
+.btn-ghost:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.btn-danger { background: none; border: 0.5px solid var(--red); color: var(--red); font-weight: 500; }
+.btn-danger:hover { background: var(--red-light); }
+.btn-xs { font-size: 11px; padding: 4px 10px; }
+.back-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-tertiary); cursor: pointer; background: none; border: none; padding: 0 0 14px 0; transition: color 0.15s; }
+.back-btn:hover { color: var(--amber); }
+
+/* Detail panel */
+.detail-panel { background: var(--bg-secondary); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+.detail-section-lbl { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 10px; margin-top: 14px; padding-top: 12px; border-top: 0.5px solid var(--border-light); }
+.detail-section-lbl:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.field-full { grid-column: 1 / -1; }
+.field-lbl { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 3px; }
+.field-val { font-size: 13px; color: var(--text-primary); }
+.divider { height: 0.5px; background: var(--border-light); margin: 12px 0; }
+
+.notes-box { background: var(--amber-light); border: 0.5px solid rgba(184,114,10,0.2); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px; }
+.notes-box p { font-size: 13px; color: var(--text-primary); line-height: 1.6; }
+
+/* Inventory rows */
+.inv-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius); margin-bottom: 14px; box-shadow: var(--shadow); }
+.inv-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 0.5px solid var(--border-light); gap: 10px; }
+.inv-row:last-child { border-bottom: none; }
+.inv-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.inv-note { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.inv-unit { font-size: 11px; color: var(--text-tertiary); }
+
+/* Qty stepper */
+.qty-stepper { display: flex; align-items: center; gap: 4px; }
+.qty-btn { width: 26px; height: 26px; border-radius: 5px; border: 0.5px solid var(--border-mid); background: var(--bg-secondary); color: var(--text-primary); font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.12s, border-color 0.12s; flex-shrink: 0; }
+.qty-btn:hover { background: var(--bg-tertiary); border-color: var(--border-strong); }
+.qty-btn:active { transform: scale(0.93); }
+.qty-input { width: 58px; text-align: center; padding: 4px 6px; font-size: 14px; font-weight: 700; font-family: var(--font); border: 0.5px solid var(--border-mid); border-radius: 5px; background: var(--bg-secondary); color: var(--text-primary); outline: none; transition: border-color 0.15s; -moz-appearance: textfield; }
+.qty-input:focus { border-color: var(--amber); background: var(--bg-primary); }
+.qty-input::-webkit-outer-spin-button, .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.qty-unit-lbl { font-size: 11px; color: var(--text-tertiary); min-width: 18px; }
+
+/* Modal */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: flex-start; justify-content: center; padding-top: 40px; z-index: 1000; backdrop-filter: blur(2px); }
+.modal { background: var(--bg-primary); border-radius: var(--radius); border: 0.5px solid var(--border-mid); box-shadow: var(--shadow-modal); padding: 22px; width: 620px; max-width: calc(100vw - 32px); max-height: calc(100vh - 80px); overflow-y: auto; }
+.modal-title { font-family: var(--font); font-size: 16px; font-weight: bold; margin-bottom: 18px; color: var(--text-primary); }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; padding-top: 16px; border-top: 0.5px solid var(--border-light); }
+
+/* Forms */
+.form-group { margin-bottom: 12px; }
+.form-lbl { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 5px; }
+.form-input, .form-select, .form-textarea { width: 100%; padding: 8px 12px; font-size: 13px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font-ui); outline: none; transition: border-color 0.15s; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--amber); }
+.form-textarea { min-height: 72px; resize: vertical; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.form-row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+.form-section-lbl { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin: 16px 0 10px; padding-top: 14px; border-top: 0.5px solid var(--border-light); }
+
+/* Empty state */
+.empty { text-align: center; padding: 50px 20px; color: var(--text-tertiary); font-size: 13px; }
+.empty-icon { font-size: 36px; margin-bottom: 12px; display: block; opacity: 0.5; }
+
+/* Conditional section for sights */
+#optic-detail-group { display: none; }
+#optic-detail-group.show { display: block; }
+#handgun-mags-group { }
+
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div class="app-logo">H</div>
+    <div class="app-name">Handloader's <span>Log</span></div>
+    <div class="topbar-right">
+      <span class="save-indicator" id="save-indicator">✓ Saved</span>
+      <button class="export-btn" onclick="exportData()">Export JSON</button>
+      <button class="export-btn" onclick="importData()">Import JSON</button>
+    </div>
+  </div>
+  <div class="tabbar" id="tabbar">
+    <button class="tab active" onclick="switchTab('rifles')">Firearms</button>
+    <button class="tab" onclick="switchTab('loads')">Load Recipes</button>
+    <button class="tab" onclick="switchTab('inventory')">Components</button>
+    <button class="tab" onclick="switchTab('sessions')">Range Sessions</button>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+<div id="overlay-root"></div>
+
+<script>
+const STORAGE_KEY = 'handloaders-log-v2';
+
+let DB = {
+  loads: [], rifles: [], sessions: [],
+  inventory: { powder: [], primers: [], brass: [], bullets: [] }
+};
+let activeTab = 'rifles';
+let detailView = null;
+let _loadSearch = '';
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+    const el = document.getElementById('save-indicator');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+  } catch(e) { console.error('Save failed', e); }
+}
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      Object.assign(DB, d);
+      if (!DB.sessions) DB.sessions = [];
+      if (!DB.inventory) DB.inventory = { powder:[], primers:[], brass:[], bullets:[] };
+    } else { seedData(); }
+  } catch(e) { seedData(); }
+  render();
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(DB, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'handloaders-log-backup.json'; a.click();
+}
+
+function importData() {
+  const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try { const d = JSON.parse(ev.target.result); Object.assign(DB, d); save(); detailView = null; render(); alert('Imported successfully.'); }
+      catch(err) { alert('Invalid JSON file.'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function seedData() {
+  DB.rifles = [
+    { id: uid(), make: 'Fierce', model: 'Carbon Rage', type: 'Bolt Rifle', caliber: '7 PRC', serial: '', caRegistered: 'No',
+      sightType: 'Optic', opticType: 'Variable Power Scope', opticDetail: 'Custom turret in development',
+      barrel: '22"', twist: '1:8"', weight: '9.5 lbs w/ optic', sighted: 'Yes', sightedRange: '200 yd', sightedDate: '2024-08-15',
+      purpose: 'Med-Large Game', magazines: '', holster: 'N/A',
+      valueFirearm: '3800', valueOptic: '1200', notes: 'Primary precision hunting rifle.' },
+    { id: uid(), make: 'HK', model: 'USP 45', type: 'Handgun', caliber: '.45 ACP', serial: '', caRegistered: 'Yes',
+      sightType: 'Iron', opticType: '', opticDetail: '',
+      barrel: '4.41"', twist: '1:16"', weight: '1.9 lbs', sighted: 'Yes', sightedRange: '25 yd', sightedDate: '2023-05-10',
+      purpose: 'CCW', magazines: '3 × 12rd USP factory', holster: 'Yes — Safariland 6378',
+      valueFirearm: '1100', valueOptic: '', notes: '.45 Super compatibility under evaluation. Spring/buffer upgrade required.' },
+    { id: uid(), make: 'S&W', model: 'M&P22 Magnum', type: 'Handgun', caliber: '.22 WMR', serial: '', caRegistered: 'Yes',
+      sightType: 'Optic', opticType: 'Red Dot / Reflex', opticDetail: 'Holosun HS507k',
+      barrel: '4.35"', twist: '1:16"', weight: '1.6 lbs w/ optic', sighted: 'Yes', sightedRange: '25 yd', sightedDate: '2024-01-20',
+      purpose: 'CCW', magazines: '2 × 22rd factory', holster: 'Yes — Alien Gear',
+      valueFirearm: '650', valueOptic: '320', notes: 'JHP cycles reliably. Avoid TMJ flat-tip, copper-plated, polymer-coated, foreign brass.' },
+  ];
+  const r0 = DB.rifles[0].id;
+  DB.loads = [
+    { id: uid(), rifleId: r0, cartridge: '7 PRC',
+      diesMake: 'Redding', diesModel: 'Type-S Match Bushing', diesPlatform: 'Turret Press',
+      bulletBrand: 'Barnes', bulletModel: 'LRX BT', bulletDiameter: '.284"', bulletWeight: '160', bulletBC: 'G1: .527', bulletSD: '.283', bulletConstruction: 'Bonded / Lead-Free',
+      primerBrand: 'Federal', primerSize: 'Large Rifle Magnum', primerModel: '215M',
+      powderName: 'Vihtavuori N568', chargeMin: '64.0', chargeMax: '68.0', chargeBest: '67.0',
+      mv: '3149', me: '3524', coalMax: '3.390"', coalActual: '3.325"',
+      status: 'Active', notes: '~1.5 MOA — seating depth sensitivity under investigation.', created: new Date().toISOString() },
+    { id: uid(), rifleId: r0, cartridge: '7 PRC',
+      diesMake: 'Redding', diesModel: 'Type-S Match Bushing', diesPlatform: 'Turret Press',
+      bulletBrand: 'Hornady', bulletModel: 'ELD-X', bulletDiameter: '.284"', bulletWeight: '175', bulletBC: 'G1: .672', bulletSD: '.310', bulletConstruction: 'Polymer Tip / Bonded',
+      primerBrand: 'Federal', primerSize: 'Large Rifle Magnum', primerModel: '215M',
+      powderName: 'H4350', chargeMin: '61.0', chargeMax: '65.0', chargeBest: '63.5',
+      mv: '2930', me: '3334', coalMax: '3.340"', coalActual: '3.310"',
+      status: 'Reference', notes: '~0.5 MOA accuracy benchmark. Reference for turret development.', created: new Date().toISOString() },
+  ];
+  DB.sessions = [];
+  DB.inventory = {
+    powder: [
+      { id: uid(), name: 'H4350', qty: '3', unit: 'lb', notes: 'Lot #L233' },
+      { id: uid(), name: 'Vihtavuori N568', qty: '1', unit: 'lb', notes: 'Cold-weather preferred over N570 for Prudhoe Bay' },
+    ],
+    primers: [
+      { id: uid(), brand: 'Federal', model: '215M', size: 'Large Rifle Magnum', qty: '500', notes: '' },
+      { id: uid(), brand: 'CCI', model: '250', size: 'Large Rifle Magnum', qty: '300', notes: '' },
+    ],
+    brass: [
+      { id: uid(), brand: 'Hornady', caliber: '7 PRC', qty: '120', notes: 'Fired 2×' },
+      { id: uid(), brand: 'Hornady', caliber: '.300 Win Mag', qty: '80', notes: '' },
+    ],
+    bullets: [
+      { id: uid(), brand: 'Barnes', caliber: '7mm / .284"', cartridge: '7 PRC', weight: '160gr', application: 'Med-Large Game', qty: '200', notes: 'LRX BT' },
+      { id: uid(), brand: 'Hornady', caliber: '7mm / .284"', cartridge: '7 PRC', weight: '175gr', application: 'Med-Large Game', qty: '100', notes: 'ELD-X — accuracy reference' },
+    ]
+  };
+  save();
+}
+
+// ─── Routing ──────────────────────────────────────────────────────
+function switchTab(tab) {
+  activeTab = tab; detailView = null; _loadSearch = '';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const order = ['rifles','loads','inventory','sessions'];
+  document.querySelectorAll('.tab')[order.indexOf(tab)].classList.add('active');
+  render();
+}
+
+function render() {
+  const c = document.getElementById('content');
+  if (activeTab === 'loads') c.innerHTML = detailView?.type === 'load' ? renderLoadDetail(detailView.id) : renderLoads();
+  else if (activeTab === 'rifles') c.innerHTML = detailView?.type === 'rifle' ? renderRifleDetail(detailView.id) : renderRifles();
+  else if (activeTab === 'sessions') c.innerHTML = renderSessions();
+  else if (activeTab === 'inventory') c.innerHTML = renderInventory();
+}
+
+function viewLoad(id) { detailView = { type: 'load', id }; render(); }
+function viewRifle(id) { detailView = { type: 'rifle', id }; render(); }
+function backToList() { detailView = null; render(); }
+
+function getRifle(id) { return DB.rifles.find(r => r.id === id) || null; }
+function getLoad(id) { return DB.loads.find(l => l.id === id) || null; }
+
+function statusBadge(s) {
+  const map = { Active: 'b-green', Reference: 'b-blue', Testing: 'b-amber', Retired: 'b-gray' };
+  return `<span class="badge ${map[s]||'b-gray'}">${s||'—'}</span>`;
+}
+
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fv(label, val, full) {
+  if (!val) return '';
+  return `<div${full?' class="field-full"':''}><div class="field-lbl">${label}</div><div class="field-val">${esc(val)}</div></div>`;
+}
+
+// ─── Loads Tab ────────────────────────────────────────────────────
+function renderLoads() {
+  let loads = DB.loads.filter(l => {
+    if (!_loadSearch) return true;
+    const q = _loadSearch.toLowerCase();
+    return [l.bulletBrand, l.bulletModel, l.cartridge, l.powderName, l.diesMake].some(f => (f||'').toLowerCase().includes(q));
+  });
+
+  return `
+  <div class="sec-hdr">
+    <div class="sec-title">Load Recipes <span class="sec-count">${loads.length} of ${DB.loads.length}</span></div>
+    <button class="btn btn-amber" onclick="openAddLoad(null)">+ New Recipe</button>
+  </div>
+  <input class="search" placeholder="Search bullet, cartridge, powder, dies…" value="${esc(_loadSearch)}" oninput="_loadSearch=this.value;render()">
+  ${loads.length === 0 ? `<div class="empty"><span class="empty-icon">📋</span>No recipes yet.</div>` :
+    loads.map(l => {
+      const rifle = getRifle(l.rifleId);
+      const sessCount = DB.sessions.filter(s => s.loadId === l.id).length;
+      return `<div class="card" onclick="viewLoad('${l.id}')">
+        <div class="card-hdr">
+          <div>
+            <div class="card-title">${esc(l.bulletBrand)} ${esc(l.bulletModel)} ${esc(l.bulletWeight)}gr</div>
+            <div class="card-sub">${esc(l.cartridge)} · ${esc(l.powderName)} ${esc(l.chargeBest)}gr</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+            ${statusBadge(l.status)}
+            ${sessCount > 0 ? `<span style="font-size:10px;color:var(--text-tertiary);">${sessCount} session${sessCount>1?'s':''}</span>` : ''}
+          </div>
+        </div>
+        <div class="card-meta">
+          ${rifle ? `<span>📍 ${esc(rifle.make)} ${esc(rifle.model)}</span>` : ''}
+          ${l.mv ? `<span>⚡ ${esc(l.mv)} fps · ${esc(l.me)} ft-lbs</span>` : ''}
+          ${l.primerBrand ? `<span>${esc(l.primerBrand)} ${esc(l.primerModel)}</span>` : ''}
+          ${l.diesMake ? `<span>Dies: ${esc(l.diesMake)}</span>` : ''}
+        </div>
+        ${l.notes ? `<div class="card-note">${esc(l.notes).slice(0,140)}${l.notes.length>140?'…':''}</div>` : ''}
+      </div>`;
+    }).join('')}`;
+}
+
+function renderLoadDetail(id) {
+  const l = getLoad(id);
+  if (!l) return '<p>Not found.</p>';
+  const rifle = getRifle(l.rifleId);
+  const sessions = DB.sessions.filter(s => s.loadId === id).sort((a,b) => b.date.localeCompare(a.date));
+
+  return `
+  <button class="back-btn" onclick="backToList()">← All Recipes</button>
+  <div class="sec-hdr">
+    <div>
+      <div class="sec-title">${esc(l.bulletBrand)} ${esc(l.bulletModel)} ${esc(l.bulletWeight)}gr</div>
+      <div style="font-size:12px;color:var(--text-tertiary);margin-top:2px;">${esc(l.cartridge)}</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      ${statusBadge(l.status)}
+      <button class="btn btn-ghost btn-xs" onclick="openEditLoad('${id}')">Edit</button>
+      <button class="btn btn-danger btn-xs" onclick="deleteLoad('${id}')">Delete</button>
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-lbl">Best Charge</div><div class="stat-val">${esc(l.chargeBest)||'—'}<span class="stat-unit">${l.chargeBest?'gr':''}</span></div></div>
+    <div class="stat-card"><div class="stat-lbl">Muzzle Vel</div><div class="stat-val">${l.mv||'—'}<span class="stat-unit">${l.mv?'fps':''}</span></div></div>
+    <div class="stat-card"><div class="stat-lbl">Muzzle Energy</div><div class="stat-val">${l.me||'—'}<span class="stat-unit">${l.me?'ft·lb':''}</span></div></div>
+    <div class="stat-card"><div class="stat-lbl">BC</div><div class="stat-val" style="font-size:14px;padding-top:4px;">${esc(l.bulletBC)||'—'}</div></div>
+  </div>
+
+  <div class="detail-panel">
+    <div class="detail-section-lbl">Dies & Platform</div>
+    <div class="field-grid">
+      ${fv('Dies Make', l.diesMake)} ${fv('Dies Model', l.diesModel)}
+      ${fv('Platform', l.diesPlatform, false)} ${fv('Cartridge', l.cartridge)}
+    </div>
+
+    <div class="detail-section-lbl">Bullet</div>
+    <div class="field-grid">
+      ${fv('Brand', l.bulletBrand)} ${fv('Model', l.bulletModel)}
+      ${fv('Diameter', l.bulletDiameter)} ${fv('Weight', l.bulletWeight ? l.bulletWeight+'gr' : '')}
+      ${fv('BC', l.bulletBC)} ${fv('SD', l.bulletSD)}
+      ${fv('Construction', l.bulletConstruction, true)}
+    </div>
+
+    <div class="detail-section-lbl">Primer</div>
+    <div class="field-grid">
+      ${fv('Brand', l.primerBrand)} ${fv('Model', l.primerModel)}
+      ${fv('Size', l.primerSize)}
+    </div>
+
+    <div class="detail-section-lbl">Powder & Charge</div>
+    <div class="field-grid">
+      ${fv('Powder', l.powderName)} ${fv('Charge Range', (l.chargeMin&&l.chargeMax) ? l.chargeMin+'–'+l.chargeMax+' gr' : '')}
+      ${fv('Best Charge', l.chargeBest ? l.chargeBest+' gr' : '')}
+    </div>
+
+    <div class="detail-section-lbl">Seating</div>
+    <div class="field-grid">
+      ${fv('Max COAL', l.coalMax)} ${fv('Actual COAL', l.coalActual)}
+    </div>
+
+    ${rifle ? `
+    <div class="detail-section-lbl">Firearm</div>
+    <div class="field-val">${esc(rifle.make)} ${esc(rifle.model)} · ${esc(rifle.caliber)}${rifle.barrel?' · '+esc(rifle.barrel):''}</div>
+    ` : ''}
+  </div>
+
+  ${l.notes ? `<div class="notes-box"><div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:6px;">Notes</div><p>${esc(l.notes)}</p></div>` : ''}
+
+  <div class="sec-hdr" style="margin-bottom:10px;">
+    <div style="font-size:13px;font-weight:600;">Range Sessions <span class="sec-count">${sessions.length}</span></div>
+    <button class="btn btn-ghost btn-xs" onclick="openAddSession('${id}')">+ Log Session</button>
+  </div>
+  ${sessions.length === 0 ? `<div style="font-size:12px;color:var(--text-tertiary);padding:12px 0 20px;">No sessions logged for this load yet.</div>` :
+    sessions.map(s => `<div class="card" style="cursor:default;">
+      <div class="card-hdr">
+        <div>
+          <div class="card-title" style="font-size:13px;">${esc(s.date)} · ${esc(s.location||'Unknown location')}</div>
+          ${s.groups ? `<div class="card-sub">Groups: ${esc(s.groups)}</div>` : ''}
+        </div>
+        <button class="btn btn-danger btn-xs" onclick="deleteSession('${s.id}')">×</button>
+      </div>
+      <div class="card-meta">
+        ${s.temp ? `<span>🌡 ${esc(s.temp)}°F</span>` : ''}
+        ${s.elevation ? `<span>⛰ ${esc(s.elevation)} ft</span>` : ''}
+        ${s.wind ? `<span>💨 ${esc(s.wind)}</span>` : ''}
+        ${s.chrono ? `<span>⚡ ${esc(s.chrono)}</span>` : ''}
+      </div>
+      ${s.notes ? `<div class="card-note">${esc(s.notes)}</div>` : ''}
+    </div>`).join('')}`;
+}
+
+// ─── Rifles Tab ───────────────────────────────────────────────────
+function renderRifles() {
+  return `
+  <div class="sec-hdr">
+    <div class="sec-title">Firearms <span class="sec-count">${DB.rifles.length}</span></div>
+    <button class="btn btn-amber" onclick="openAddRifle()">+ Add Firearm</button>
+  </div>
+  ${DB.rifles.length === 0 ? `<div class="empty"><span class="empty-icon">🔫</span>No firearms added yet.</div>` :
+    DB.rifles.map(r => {
+      const loadCount = DB.loads.filter(l => l.rifleId === r.id).length;
+      const opticStr = r.sightType === 'Optic' ? (r.opticType + (r.opticDetail ? ' — ' + r.opticDetail : '')) : r.sightType || '';
+      return `<div class="card" onclick="viewRifle('${r.id}')">
+        <div class="card-hdr">
+          <div>
+            <div class="card-title">${esc(r.make)} ${esc(r.model)}</div>
+            <div class="card-sub">${esc(r.caliber)} · ${esc(r.type||'')}${r.barrel?' · '+esc(r.barrel):''}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+            <span class="badge b-amber">${loadCount} load${loadCount!==1?'s':''}</span>
+            ${r.caRegistered==='Yes' ? '<span class="badge b-coral">CA Reg</span>' : ''}
+          </div>
+        </div>
+        <div class="card-meta">
+          ${opticStr ? `<span>🔭 ${esc(opticStr)}</span>` : ''}
+          ${r.purpose ? `<span>🎯 ${esc(r.purpose)}</span>` : ''}
+          ${r.valueFirearm ? `<span>💰 $${esc(r.valueFirearm)}${r.valueOptic?' + $'+esc(r.valueOptic)+' optic':''}</span>` : ''}
+        </div>
+        ${r.notes ? `<div class="card-note">${esc(r.notes).slice(0,120)}${r.notes.length>120?'…':''}</div>` : ''}
+      </div>`;
+    }).join('')}`;
+}
+
+function renderRifleDetail(id) {
+  const r = DB.rifles.find(x => x.id === id);
+  if (!r) return '<p>Not found.</p>';
+  const loads = DB.loads.filter(l => l.rifleId === id);
+
+  return `
+  <button class="back-btn" onclick="backToList()">← All Firearms</button>
+  <div class="sec-hdr">
+    <div>
+      <div class="sec-title">${esc(r.make)} ${esc(r.model)}</div>
+      <div style="font-size:12px;color:var(--text-tertiary);">${esc(r.caliber)} · ${esc(r.type||'')}</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-xs" onclick="openEditRifle('${id}')">Edit</button>
+      <button class="btn btn-danger btn-xs" onclick="deleteRifle('${id}')">Delete</button>
+    </div>
+  </div>
+
+  <div class="detail-panel">
+    <div class="detail-section-lbl">Identity</div>
+    <div class="field-grid">
+      ${fv('Make', r.make)} ${fv('Model', r.model)}
+      ${fv('Type', r.type)} ${fv('Caliber', r.caliber)}
+      ${fv('Serial Number', r.serial)} ${fv('CA Registered', r.caRegistered)}
+    </div>
+
+    <div class="detail-section-lbl">Barrel & Weight</div>
+    <div class="field-grid">
+      ${fv('Barrel Length', r.barrel)} ${fv('Twist Rate', r.twist)}
+      ${fv('Weight w/ Optic', r.weight)}
+    </div>
+
+    <div class="detail-section-lbl">Sights</div>
+    <div class="field-grid">
+      ${fv('Sight Type', r.sightType)}
+      ${r.sightType === 'Optic' ? fv('Optic Type', r.opticType) : ''}
+      ${r.sightType === 'Optic' && r.opticDetail ? fv('Optic Detail', r.opticDetail, true) : ''}
+    </div>
+
+    <div class="detail-section-lbl">Zero / Sighted</div>
+    <div class="field-grid">
+      ${fv('Sighted In', r.sighted)} ${fv('Zero Range', r.sightedRange)}
+      ${fv('Date Sighted', r.sightedDate)}
+    </div>
+
+    <div class="detail-section-lbl">Storage & Value</div>
+    <div class="field-grid">
+      ${fv('Primary Purpose', r.purpose)} ${fv('Holster', r.holster)}
+      ${r.type !== 'Bolt Rifle' && r.type !== 'Semi-Auto Rifle' ? fv('Magazines', r.magazines, true) : fv('Magazines', r.magazines, true)}
+      ${fv('Firearm Value', r.valueFirearm ? '$'+r.valueFirearm : '')} ${fv('Optic Value', r.valueOptic ? '$'+r.valueOptic : '')}
+    </div>
+
+    ${r.notes ? `<div class="divider"></div><div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">${esc(r.notes)}</div>` : ''}
+  </div>
+
+  <div class="sec-hdr" style="margin-bottom:10px;">
+    <div style="font-size:13px;font-weight:600;">Load Recipes <span class="sec-count">${loads.length}</span></div>
+    <button class="btn btn-ghost btn-xs" onclick="openAddLoadForRifle('${id}')">+ Add Recipe</button>
+  </div>
+  ${loads.length === 0 ? `<div style="font-size:12px;color:var(--text-tertiary);padding:12px 0 20px;">No loads linked yet.</div>` :
+    loads.map(l => `<div class="card" onclick="viewLoad('${l.id}')">
+      <div class="card-hdr">
+        <div class="card-title" style="font-size:13px;">${esc(l.bulletBrand)} ${esc(l.bulletModel)} ${esc(l.bulletWeight)}gr</div>
+        ${statusBadge(l.status)}
+      </div>
+      <div class="card-meta">
+        <span>${esc(l.powderName)} ${esc(l.chargeBest)}gr</span>
+        ${l.mv ? `<span>⚡ ${esc(l.mv)} fps</span>` : ''}
+      </div>
+    </div>`).join('')}`;
+}
+
+// ─── Sessions Tab ─────────────────────────────────────────────────
+function renderSessions() {
+  const sorted = [...DB.sessions].sort((a,b) => b.date.localeCompare(a.date));
+  return `
+  <div class="sec-hdr">
+    <div class="sec-title">Range Sessions <span class="sec-count">${sorted.length}</span></div>
+    <button class="btn btn-amber" onclick="openAddSession(null)">+ Log Session</button>
+  </div>
+  ${sorted.length === 0 ? `<div class="empty"><span class="empty-icon">🎯</span>No sessions logged yet.</div>` :
+    sorted.map(s => {
+      const load = getLoad(s.loadId);
+      const rifle = load ? getRifle(load.rifleId) : null;
+      return `<div class="card" style="cursor:default;">
+        <div class="card-hdr">
+          <div>
+            <div class="card-title">${esc(s.date)} · ${esc(s.location||'Unknown')}</div>
+            ${load ? `<div class="card-sub">${esc(load.bulletBrand)} ${esc(load.bulletModel)} ${esc(load.bulletWeight)}gr · ${esc(load.cartridge)}</div>` : ''}
+          </div>
+          <button class="btn btn-danger btn-xs" onclick="deleteSession('${s.id}')">×</button>
+        </div>
+        <div class="card-meta">
+          ${rifle ? `<span>📍 ${esc(rifle.make)} ${esc(rifle.model)}</span>` : ''}
+          ${s.temp ? `<span>🌡 ${esc(s.temp)}°F</span>` : ''}
+          ${s.elevation ? `<span>⛰ ${esc(s.elevation)} ft</span>` : ''}
+          ${s.groups ? `<span>Groups: ${esc(s.groups)}</span>` : ''}
+          ${s.chrono ? `<span>⚡ ${esc(s.chrono)}</span>` : ''}
+        </div>
+        ${s.notes ? `<div class="card-note">${esc(s.notes)}</div>` : ''}
+      </div>`;
+    }).join('')}`;
+}
+
+// ─── Inventory Tab ────────────────────────────────────────────────
+
+// Shared stepper HTML builder
+function qtyStepperHTML(cat, id, qty, unit) {
+  return `<div class="qty-stepper">
+    <button class="qty-btn" onclick="adjustQty('${cat}','${id}',-1,event)" title="Use one">−</button>
+    <input class="qty-input" type="number" value="${esc(String(qty))}"
+      onchange="setQty('${cat}','${id}',this.value)"
+      onblur="setQty('${cat}','${id}',this.value)"
+      onclick="this.select()"
+      min="0" step="${cat==='powder'?'0.5':'1'}">
+    <span class="qty-unit-lbl">${esc(unit)}</span>
+    <button class="qty-btn" onclick="adjustQty('${cat}','${id}',1,event)" title="Add one">+</button>
+  </div>`;
+}
+
+function adjustQty(cat, id, delta, event) {
+  event.stopPropagation();
+  const item = DB.inventory[cat].find(x => x.id === id);
+  if (!item) return;
+  const step = cat === 'powder' ? 0.5 : 1;
+  const current = parseFloat(item.qty) || 0;
+  const next = Math.max(0, +(current + delta * step).toFixed(4));
+  item.qty = String(next);
+  save();
+  // Update input value in-place without full re-render
+  const input = event.target.closest('.inv-row')?.querySelector('.qty-input');
+  if (input) input.value = next;
+}
+
+function setQty(cat, id, val) {
+  const item = DB.inventory[cat].find(x => x.id === id);
+  if (!item) return;
+  const parsed = parseFloat(val);
+  item.qty = isNaN(parsed) ? '0' : String(Math.max(0, parsed));
+  save();
+}
+
+function renderInventory() {
+  const powderRows = DB.inventory.powder.length === 0
+    ? `<div class="inv-row" style="justify-content:center;color:var(--text-tertiary);font-size:12px;">None added yet</div>`
+    : DB.inventory.powder.map(item => `<div class="inv-row">
+        <div style="flex:1;min-width:0;">
+          <div class="inv-name">${esc(item.name)}</div>
+          ${item.notes ? `<div class="inv-note">${esc(item.notes)}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${qtyStepperHTML('powder', item.id, item.qty, item.unit||'lb')}
+          <button class="btn btn-danger btn-xs" onclick="deleteInventory('powder','${item.id}')">×</button>
+        </div>
+      </div>`).join('');
+
+  const primerRows = DB.inventory.primers.length === 0
+    ? `<div class="inv-row" style="justify-content:center;color:var(--text-tertiary);font-size:12px;">None added yet</div>`
+    : DB.inventory.primers.map(item => `<div class="inv-row">
+        <div style="flex:1;min-width:0;">
+          <div class="inv-name">${esc(item.brand)} ${esc(item.model)}</div>
+          <div class="inv-note">${esc(item.size)}${item.notes?' · '+esc(item.notes):''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${qtyStepperHTML('primers', item.id, item.qty, 'ct')}
+          <button class="btn btn-danger btn-xs" onclick="deleteInventory('primers','${item.id}')">×</button>
+        </div>
+      </div>`).join('');
+
+  const brassRows = DB.inventory.brass.length === 0
+    ? `<div class="inv-row" style="justify-content:center;color:var(--text-tertiary);font-size:12px;">None added yet</div>`
+    : DB.inventory.brass.map(item => `<div class="inv-row">
+        <div style="flex:1;min-width:0;">
+          <div class="inv-name">${esc(item.brand)} ${esc(item.caliber)}</div>
+          ${item.notes ? `<div class="inv-note">${esc(item.notes)}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${qtyStepperHTML('brass', item.id, item.qty, 'ct')}
+          <button class="btn btn-danger btn-xs" onclick="deleteInventory('brass','${item.id}')">×</button>
+        </div>
+      </div>`).join('');
+
+  const bulletRows = DB.inventory.bullets.length === 0
+    ? `<div class="inv-row" style="justify-content:center;color:var(--text-tertiary);font-size:12px;">None added yet</div>`
+    : DB.inventory.bullets.map(item => `<div class="inv-row">
+        <div style="flex:1;min-width:0;">
+          <div class="inv-name">${esc(item.brand)} ${esc(item.weight)}gr ${esc(item.caliber)}</div>
+          <div class="inv-note">${esc(item.cartridge)}${item.application?' · '+esc(item.application):''}${item.notes?' · '+esc(item.notes):''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${qtyStepperHTML('bullets', item.id, item.qty, 'ct')}
+          <button class="btn btn-danger btn-xs" onclick="deleteInventory('bullets','${item.id}')">×</button>
+        </div>
+      </div>`).join('');
+
+  return `
+  <div class="sec-hdr"><div class="sec-title">Component Inventory</div></div>
+  <div class="stat-grid" style="margin-bottom:20px;">
+    <div class="stat-card"><div class="stat-lbl">Powders</div><div class="stat-val">${DB.inventory.powder.length}</div></div>
+    <div class="stat-card"><div class="stat-lbl">Primers</div><div class="stat-val">${DB.inventory.primers.length}</div></div>
+    <div class="stat-card"><div class="stat-lbl">Brass</div><div class="stat-val">${DB.inventory.brass.length}</div></div>
+    <div class="stat-card"><div class="stat-lbl">Bullets</div><div class="stat-val">${DB.inventory.bullets.length}</div></div>
+  </div>
+  <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:16px;margin-top:-10px;">
+    Use − / + to adjust quantities, or tap the number to type a value directly.
+  </div>
+
+  <div style="margin-bottom:20px;">
+    <div class="sec-hdr" style="margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:600;">Powder</div>
+      <button class="btn btn-ghost btn-xs" onclick="openAddPowder()">+ Add</button>
+    </div>
+    <div class="inv-card">${powderRows}</div>
+  </div>
+
+  <div style="margin-bottom:20px;">
+    <div class="sec-hdr" style="margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:600;">Primers</div>
+      <button class="btn btn-ghost btn-xs" onclick="openAddPrimer()">+ Add</button>
+    </div>
+    <div class="inv-card">${primerRows}</div>
+  </div>
+
+  <div style="margin-bottom:20px;">
+    <div class="sec-hdr" style="margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:600;">Brass</div>
+      <button class="btn btn-ghost btn-xs" onclick="openAddBrass()">+ Add</button>
+    </div>
+    <div class="inv-card">${brassRows}</div>
+  </div>
+
+  <div style="margin-bottom:20px;">
+    <div class="sec-hdr" style="margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:600;">Bullets</div>
+      <button class="btn btn-ghost btn-xs" onclick="openAddBullet()">+ Add</button>
+    </div>
+    <div class="inv-card">${bulletRows}</div>
+  </div>`;
+}
+
+// ─── Modal helpers ────────────────────────────────────────────────
+function openModal(html) {
+  const root = document.getElementById('overlay-root');
+  root.innerHTML = `<div class="overlay" onclick="closeOnOverlay(event)">${html}</div>`;
+}
+function closeModal() { document.getElementById('overlay-root').innerHTML = ''; }
+function closeOnOverlay(e) { if (e.target.classList.contains('overlay')) closeModal(); }
+
+// ─── Load Form ────────────────────────────────────────────────────
+function loadFormHTML(l, prefillRifleId) {
+  const rifleOpts = DB.rifles.map(r =>
+    `<option value="${r.id}" ${(l?.rifleId||prefillRifleId)===r.id?'selected':''}>${esc(r.make)} ${esc(r.model)} (${esc(r.caliber)})</option>`
+  ).join('');
+  const v = (f, def='') => esc(l?.[f]||def);
+  const sel = (f, opts) => opts.map(o => `<option ${v(f)===o?'selected':''}>${o}</option>`).join('');
+
+  return `<div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">${l ? 'Edit' : 'New'} Load Recipe</div>
+
+    <div class="form-section-lbl" style="border-top:none;margin-top:0;padding-top:0;">Cartridge & Platform</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Cartridge</label><input class="form-input" id="f-cart" value="${v('cartridge')}" placeholder="7 PRC"></div>
+      <div class="form-group"><label class="form-lbl">Firearm</label>
+        <select class="form-select" id="f-rifle">${rifleOpts||'<option value="">No firearms added yet</option>'}</select>
+      </div>
+    </div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-lbl">Dies Make</label><input class="form-input" id="f-diesmake" value="${v('diesMake')}" placeholder="Redding"></div>
+      <div class="form-group"><label class="form-lbl">Dies Model</label><input class="form-input" id="f-diesmodel" value="${v('diesModel')}" placeholder="Type-S Match Bushing"></div>
+      <div class="form-group"><label class="form-lbl">Reloading Platform</label><input class="form-input" id="f-diesplatform" value="${v('diesPlatform')}" placeholder="Turret / Single Stage"></div>
+    </div>
+
+    <div class="form-section-lbl">Bullet</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Brand</label><input class="form-input" id="f-bbrand" value="${v('bulletBrand')}" placeholder="Barnes"></div>
+      <div class="form-group"><label class="form-lbl">Model</label><input class="form-input" id="f-bmodel" value="${v('bulletModel')}" placeholder="LRX BT"></div>
+    </div>
+    <div class="form-row-4">
+      <div class="form-group"><label class="form-lbl">Diameter</label><input class="form-input" id="f-bdia" value="${v('bulletDiameter')}" placeholder='.284"'></div>
+      <div class="form-group"><label class="form-lbl">Weight (gr)</label><input class="form-input" id="f-bwt" type="number" value="${v('bulletWeight')}" placeholder="160"></div>
+      <div class="form-group"><label class="form-lbl">BC</label><input class="form-input" id="f-bc" value="${v('bulletBC')}" placeholder="G1: .527"></div>
+      <div class="form-group"><label class="form-lbl">SD</label><input class="form-input" id="f-sd" value="${v('bulletSD')}" placeholder=".283"></div>
+    </div>
+    <div class="form-group"><label class="form-lbl">Construction</label>
+      <select class="form-select" id="f-bconst">
+        <option value="">— Select —</option>
+        ${['Bonded / Lead-Free','Polymer Tip / Bonded','Polymer Tip / Non-Bonded','Hollow Point','Solid Copper','Lead Core / Cup & Core','Lead Core / Partition','Monometal','Solid Brass'].map(o => `<option ${v('bulletConstruction')===o?'selected':''}>${o}</option>`).join('')}
+      </select>
+    </div>
+
+    <div class="form-section-lbl">Primer</div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-lbl">Brand</label><input class="form-input" id="f-pbrand" value="${v('primerBrand')}" placeholder="Federal"></div>
+      <div class="form-group"><label class="form-lbl">Model</label><input class="form-input" id="f-pmodel" value="${v('primerModel')}" placeholder="215M"></div>
+      <div class="form-group"><label class="form-lbl">Size</label>
+        <select class="form-select" id="f-psize">
+          <option value="">— Select —</option>
+          ${['Small Rifle','Small Rifle Magnum','Large Rifle','Large Rifle Magnum','Small Pistol','Small Pistol Magnum','Large Pistol','Large Pistol Magnum'].map(o => `<option ${v('primerSize')===o?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="form-section-lbl">Powder & Charge</div>
+    <div class="form-group"><label class="form-lbl">Powder Name</label><input class="form-input" id="f-powder" value="${v('powderName')}" placeholder="H4350"></div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-lbl">Min Charge (gr)</label><input class="form-input" id="f-cmin" type="number" step="0.1" value="${v('chargeMin')}" placeholder="61.0"></div>
+      <div class="form-group"><label class="form-lbl">Max Charge (gr)</label><input class="form-input" id="f-cmax" type="number" step="0.1" value="${v('chargeMax')}" placeholder="65.0"></div>
+      <div class="form-group"><label class="form-lbl">Best Charge (gr)</label><input class="form-input" id="f-cbest" type="number" step="0.1" value="${v('chargeBest')}" placeholder="63.5"></div>
+    </div>
+
+    <div class="form-section-lbl">Velocity & Energy</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Muzzle Velocity (fps)</label><input class="form-input" id="f-mv" type="number" value="${v('mv')}" placeholder="2930"></div>
+      <div class="form-group"><label class="form-lbl">Muzzle Energy (ft-lbs)</label><input class="form-input" id="f-me" type="number" value="${v('me')}" placeholder="3334"></div>
+    </div>
+
+    <div class="form-section-lbl">Seating</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Max COAL</label><input class="form-input" id="f-coalmax" value="${v('coalMax')}" placeholder='3.390"'></div>
+      <div class="form-group"><label class="form-lbl">Actual COAL</label><input class="form-input" id="f-coalactual" value="${v('coalActual')}" placeholder='3.310"'></div>
+    </div>
+
+    <div class="form-section-lbl">Status & Notes</div>
+    <div class="form-group"><label class="form-lbl">Status</label>
+      <select class="form-select" id="f-status">${sel('status',['Testing','Active','Reference','Retired'])}</select>
+    </div>
+    <div class="form-group"><label class="form-lbl">Notes</label>
+      <textarea class="form-textarea" id="f-notes" placeholder="Accuracy, pressure signs, brass, environmental conditions, next steps…">${v('notes')}</textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-amber" onclick="saveLoad(${l?`'${l.id}'`:'null'})">Save Recipe</button>
+    </div>
+  </div>`;
+}
+
+function openAddLoad(prefillRifleId) { openModal(loadFormHTML(null, prefillRifleId)); }
+function openEditLoad(id) { openModal(loadFormHTML(getLoad(id))); }
+function openAddLoadForRifle(rifleId) {
+  activeTab = 'loads'; detailView = null;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===1));
+  render();
+  openModal(loadFormHTML(null, rifleId));
+}
+
+function saveLoad(id) {
+  const g = x => (document.getElementById(x)||{}).value||'';
+  const data = {
+    cartridge: g('f-cart'), rifleId: g('f-rifle'),
+    diesMake: g('f-diesmake'), diesModel: g('f-diesmodel'), diesPlatform: g('f-diesplatform'),
+    bulletBrand: g('f-bbrand'), bulletModel: g('f-bmodel'), bulletDiameter: g('f-bdia'),
+    bulletWeight: g('f-bwt'), bulletBC: g('f-bc'), bulletSD: g('f-sd'), bulletConstruction: g('f-bconst'),
+    primerBrand: g('f-pbrand'), primerModel: g('f-pmodel'), primerSize: g('f-psize'),
+    powderName: g('f-powder'), chargeMin: g('f-cmin'), chargeMax: g('f-cmax'), chargeBest: g('f-cbest'),
+    mv: g('f-mv'), me: g('f-me'),
+    coalMax: g('f-coalmax'), coalActual: g('f-coalactual'),
+    status: g('f-status'), notes: g('f-notes')
+  };
+  if (!data.bulletBrand.trim() || !data.powderName.trim()) { alert('Bullet brand and powder are required.'); return; }
+  if (id && id !== 'null') {
+    const idx = DB.loads.findIndex(l => l.id === id);
+    if (idx >= 0) Object.assign(DB.loads[idx], data);
+  } else {
+    DB.loads.push({ id: uid(), ...data, created: new Date().toISOString() });
+  }
+  closeModal(); save(); render();
+}
+
+function deleteLoad(id) {
+  if (!confirm('Delete this load recipe and its associated sessions?')) return;
+  DB.loads = DB.loads.filter(l => l.id !== id);
+  DB.sessions = DB.sessions.filter(s => s.loadId !== id);
+  detailView = null; save(); render();
+}
+
+// ─── Rifle Form ───────────────────────────────────────────────────
+function rifleFormHTML(r) {
+  const v = (f, def='') => esc(r?.[f]||def);
+  const sel = (f, opts) => opts.map(o => `<option ${v(f)===o?'selected':''}>${o}</option>`).join('');
+  const checked = (f, val) => (r?.[f]||'') === val ? 'selected' : '';
+
+  const sightType = r?.sightType || '';
+  const showOptic = sightType === 'Optic';
+
+  return `<div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">${r ? 'Edit' : 'Add'} Firearm</div>
+
+    <div class="form-section-lbl" style="border-top:none;margin-top:0;padding-top:0;">Identity</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Make</label><input class="form-input" id="r-make" value="${v('make')}" placeholder="Fierce"></div>
+      <div class="form-group"><label class="form-lbl">Model</label><input class="form-input" id="r-model" value="${v('model')}" placeholder="Carbon Rage"></div>
+    </div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-lbl">Type</label>
+        <select class="form-select" id="r-type">
+          ${['Bolt Rifle','Semi-Auto Rifle','Lever Action','Handgun','Shotgun','Other'].map(o => `<option ${v('type')===o?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-lbl">Caliber</label><input class="form-input" id="r-caliber" value="${v('caliber')}" placeholder="7 PRC"></div>
+      <div class="form-group"><label class="form-lbl">Serial Number</label><input class="form-input" id="r-serial" value="${v('serial')}" placeholder="Optional"></div>
+    </div>
+    <div class="form-group"><label class="form-lbl">Registered in CA?</label>
+      <select class="form-select" id="r-ca">
+        ${['No','Yes','N/A'].map(o => `<option ${v('caRegistered')===o?'selected':''}>${o}</option>`).join('')}
+      </select>
+    </div>
+
+    <div class="form-section-lbl">Barrel & Weight</div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-lbl">Barrel Length</label><input class="form-input" id="r-barrel" value="${v('barrel')}" placeholder='22"'></div>
+      <div class="form-group"><label class="form-lbl">Twist Rate</label><input class="form-input" id="r-twist" value="${v('twist')}" placeholder='1:8"'></div>
+      <div class="form-group"><label class="form-lbl">Weight (w/ optic)</label><input class="form-input" id="r-weight" value="${v('weight')}" placeholder="9.5 lbs"></div>
+    </div>
+
+    <div class="form-section-lbl">Sights</div>
+    <div class="form-group"><label class="form-lbl">Sight Type</label>
+      <select class="form-select" id="r-sighttype" onchange="toggleOpticFields()">
+        ${['Iron','Optic'].map(o => `<option ${v('sightType')===o?'selected':''}>${o}</option>`).join('')}
+      </select>
+    </div>
+    <div id="optic-fields" style="display:${showOptic?'block':'none'}">
+      <div class="form-group"><label class="form-lbl">Optic Type</label>
+        <select class="form-select" id="r-optictype">
+          ${['Variable Power Scope','Fixed Power Scope','Red Dot / Reflex','Holographic','LPVO (1-6x, 1-8x, etc.)','Night Vision / Thermal'].map(o => `<option ${v('opticType')===o?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-lbl">Optic Detail (brand, model, magnification)</label>
+        <input class="form-input" id="r-opticdetail" value="${v('opticDetail')}" placeholder="Leupold VX-6HD 4-24x52">
+      </div>
+    </div>
+
+    <div class="form-section-lbl">Zero / Sighted</div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-lbl">Sighted In?</label>
+        <select class="form-select" id="r-sighted">
+          ${['Yes','No','Needs Check'].map(o => `<option ${v('sighted')===o?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-lbl">Zero Range</label><input class="form-input" id="r-sightrange" value="${v('sightedRange')}" placeholder="100 yd / 200 yd"></div>
+      <div class="form-group"><label class="form-lbl">Date Sighted</label><input class="form-input" id="r-sightdate" type="date" value="${v('sightedDate')}"></div>
+    </div>
+
+    <div class="form-section-lbl">Magazines, Holster & Purpose</div>
+    <div class="form-group"><label class="form-lbl">Magazines (qty & type)</label>
+      <input class="form-input" id="r-mags" value="${v('magazines')}" placeholder="3 × 12rd factory, 2 × 15rd extended">
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Holster?</label>
+        <select class="form-select" id="r-holster">
+          ${['No','Yes — describe in notes','N/A'].map(o => `<option ${v('holster','No')===o?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-lbl">Holster Detail</label>
+        <input class="form-input" id="r-holsterdetail" value="${v('holster').startsWith('Yes —') ? '' : (v('holster') !== 'No' && v('holster') !== 'N/A' ? v('holster') : '')}" placeholder="Safariland 6378, IWB, etc.">
+      </div>
+    </div>
+    <div class="form-group"><label class="form-lbl">Primary Purpose</label>
+      <select class="form-select" id="r-purpose">
+        <option value="">— Select —</option>
+        ${['CCW','Home Defense','Varmints','Med-Large Game','Dangerous Game','Target Shooting','Match / Competition','Suppressor Host','General Use / Multi-Purpose'].map(o => `<option ${v('purpose')===o?'selected':''}>${o}</option>`).join('')}
+      </select>
+    </div>
+
+    <div class="form-section-lbl">Value (for insurance)</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Firearm Value ($)</label><input class="form-input" id="r-vfirearm" type="number" value="${v('valueFirearm')}" placeholder="1200"></div>
+      <div class="form-group"><label class="form-lbl">Optic Value ($)</label><input class="form-input" id="r-voptic" type="number" value="${v('valueOptic')}" placeholder="800"></div>
+    </div>
+
+    <div class="form-section-lbl">Notes</div>
+    <div class="form-group">
+      <textarea class="form-textarea" id="r-notes" placeholder="Platform quirks, history, known issues, modifications…">${v('notes')}</textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-amber" onclick="saveRifle(${r?`'${r.id}'`:'null'})">${r ? 'Save Changes' : 'Add Firearm'}</button>
+    </div>
+  </div>`;
+}
+
+function toggleOpticFields() {
+  const val = document.getElementById('r-sighttype').value;
+  document.getElementById('optic-fields').style.display = val === 'Optic' ? 'block' : 'none';
+}
+
+function openAddRifle() { openModal(rifleFormHTML(null)); }
+function openEditRifle(id) { openModal(rifleFormHTML(DB.rifles.find(r => r.id === id))); }
+
+function saveRifle(id) {
+  const g = x => (document.getElementById(x)||{}).value||'';
+  const holsterVal = g('r-holster');
+  const holsterDetail = g('r-holsterdetail');
+  const holster = (holsterVal === 'Yes — describe in notes' && holsterDetail) ? ('Yes — ' + holsterDetail) : holsterVal;
+
+  const data = {
+    make: g('r-make'), model: g('r-model'), type: g('r-type'), caliber: g('r-caliber'),
+    serial: g('r-serial'), caRegistered: g('r-ca'),
+    sightType: g('r-sighttype'), opticType: g('r-optictype'), opticDetail: g('r-opticdetail'),
+    barrel: g('r-barrel'), twist: g('r-twist'), weight: g('r-weight'),
+    sighted: g('r-sighted'), sightedRange: g('r-sightrange'), sightedDate: g('r-sightdate'),
+    magazines: g('r-mags'), holster,
+    purpose: g('r-purpose'),
+    valueFirearm: g('r-vfirearm'), valueOptic: g('r-voptic'),
+    notes: g('r-notes')
+  };
+  if (!data.make.trim() || !data.model.trim()) { alert('Make and model are required.'); return; }
+  if (id && id !== 'null') {
+    const idx = DB.rifles.findIndex(r => r.id === id);
+    if (idx >= 0) Object.assign(DB.rifles[idx], data);
+  } else {
+    DB.rifles.push({ id: uid(), ...data });
+  }
+  closeModal(); save(); render();
+}
+
+function deleteRifle(id) {
+  if (!confirm('Delete this firearm? Associated load recipes will remain.')) return;
+  DB.rifles = DB.rifles.filter(r => r.id !== id);
+  detailView = null; save(); render();
+}
+
+// ─── Session Form ─────────────────────────────────────────────────
+function sessionFormHTML(prefillLoadId) {
+  const loadOpts = DB.loads.map(l => {
+    const r = getRifle(l.rifleId);
+    return `<option value="${l.id}" ${l.id===prefillLoadId?'selected':''}>${esc(l.bulletBrand)} ${esc(l.bulletModel)} ${esc(l.bulletWeight)}gr (${esc(l.cartridge)})${r?' — '+esc(r.make)+' '+esc(r.model):''}`;
+  }).join('');
+  const today = new Date().toISOString().slice(0,10);
+  return `<div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Log Range Session</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Date</label><input class="form-input" id="s-date" type="date" value="${today}"></div>
+      <div class="form-group"><label class="form-lbl">Location</label><input class="form-input" id="s-loc" placeholder="Evanston UT / Prudhoe Bay"></div>
+    </div>
+    <div class="form-group"><label class="form-lbl">Load</label>
+      <select class="form-select" id="s-load">${loadOpts||'<option value="">No loads yet</option>'}</select>
+    </div>
+    <div class="form-section-lbl">Conditions</div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-lbl">Temp (°F)</label><input class="form-input" id="s-temp" type="number" placeholder="40"></div>
+      <div class="form-group"><label class="form-lbl">Elevation (ft)</label><input class="form-input" id="s-elev" type="number" placeholder="6750"></div>
+      <div class="form-group"><label class="form-lbl">Wind</label><input class="form-input" id="s-wind" placeholder="5 mph NW"></div>
+    </div>
+    <div class="form-section-lbl">Performance</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Group Size</label><input class="form-input" id="s-groups" placeholder="0.75 MOA @ 200yd"></div>
+      <div class="form-group"><label class="form-lbl">Chrono Data</label><input class="form-input" id="s-chrono" placeholder="3141 avg / SD 9 / ES 27"></div>
+    </div>
+    <div class="form-group"><label class="form-lbl">Notes</label>
+      <textarea class="form-textarea" id="s-notes" placeholder="Seating depths tested, pressure signs, brass observations…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-amber" onclick="saveSession()">Log Session</button>
+    </div>
+  </div>`;
+}
+
+function openAddSession(loadId) { openModal(sessionFormHTML(loadId)); }
+
+function saveSession() {
+  const g = x => (document.getElementById(x)||{}).value||'';
+  const s = { id: uid(), date: g('s-date'), location: g('s-loc'), loadId: g('s-load'), temp: g('s-temp'), elevation: g('s-elev'), wind: g('s-wind'), groups: g('s-groups'), chrono: g('s-chrono'), notes: g('s-notes') };
+  DB.sessions.push(s);
+  closeModal(); save(); render();
+}
+
+function deleteSession(id) {
+  if (!confirm('Remove this session?')) return;
+  DB.sessions = DB.sessions.filter(s => s.id !== id);
+  save(); render();
+}
+
+// ─── Inventory Forms ──────────────────────────────────────────────
+function openAddPowder() {
+  openModal(`<div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Add Powder</div>
+    <div class="form-group"><label class="form-lbl">Powder Name</label><input class="form-input" id="i-name" placeholder="H4350"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Quantity</label><input class="form-input" id="i-qty" type="number" step="0.5" placeholder="2"></div>
+      <div class="form-group"><label class="form-lbl">Unit</label>
+        <select class="form-select" id="i-unit"><option>lb</option><option>oz</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-lbl">Notes</label><input class="form-input" id="i-notes" placeholder="Lot number, source, temperature notes…"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-amber" onclick="savePowder()">Add Powder</button>
+    </div>
+  </div>`);
+}
+
+function savePowder() {
+  const g = x => (document.getElementById(x)||{}).value||'';
+  const item = { id: uid(), name: g('i-name'), qty: g('i-qty'), unit: g('i-unit'), notes: g('i-notes') };
+  if (!item.name.trim()) { alert('Name required.'); return; }
+  DB.inventory.powder.push(item);
+  closeModal(); save(); render();
+}
+
+function openAddPrimer() {
+  openModal(`<div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Add Primers</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Brand</label><input class="form-input" id="i-brand" placeholder="Federal"></div>
+      <div class="form-group"><label class="form-lbl">Model</label><input class="form-input" id="i-model" placeholder="215M"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Size</label>
+        <select class="form-select" id="i-size">
+          <option value="">— Select —</option>
+          ${['Small Rifle','Small Rifle Magnum','Large Rifle','Large Rifle Magnum','Small Pistol','Small Pistol Magnum','Large Pistol','Large Pistol Magnum'].map(o => `<option>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-lbl">Quantity (ct)</label><input class="form-input" id="i-qty" type="number" placeholder="500"></div>
+    </div>
+    <div class="form-group"><label class="form-lbl">Notes</label><input class="form-input" id="i-notes" placeholder="Lot number, source…"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-amber" onclick="savePrimer()">Add Primers</button>
+    </div>
+  </div>`);
+}
+
+function savePrimer() {
+  const g = x => (document.getElementById(x)||{}).value||'';
+  const item = { id: uid(), brand: g('i-brand'), model: g('i-model'), size: g('i-size'), qty: g('i-qty'), notes: g('i-notes') };
+  if (!item.brand.trim()) { alert('Brand required.'); return; }
+  DB.inventory.primers.push(item);
+  closeModal(); save(); render();
+}
+
+function openAddBrass() {
+  openModal(`<div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Add Brass</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Brand / Manufacturer</label><input class="form-input" id="i-brand" placeholder="Hornady"></div>
+      <div class="form-group"><label class="form-lbl">Caliber</label><input class="form-input" id="i-caliber" placeholder="7 PRC"></div>
+    </div>
+    <div class="form-group"><label class="form-lbl">Quantity (ct)</label><input class="form-input" id="i-qty" type="number" placeholder="100"></div>
+    <div class="form-group"><label class="form-lbl">Notes</label><input class="form-input" id="i-notes" placeholder="Fired count, condition, lot…"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-amber" onclick="saveBrass()">Add Brass</button>
+    </div>
+  </div>`);
+}
+
+function saveBrass() {
+  const g = x => (document.getElementById(x)||{}).value||'';
+  const item = { id: uid(), brand: g('i-brand'), caliber: g('i-caliber'), qty: g('i-qty'), notes: g('i-notes') };
+  if (!item.brand.trim() || !item.caliber.trim()) { alert('Brand and caliber required.'); return; }
+  DB.inventory.brass.push(item);
+  closeModal(); save(); render();
+}
+
+function openAddBullet() {
+  openModal(`<div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Add Bullets</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Brand</label><input class="form-input" id="i-brand" placeholder="Barnes"></div>
+      <div class="form-group"><label class="form-lbl">Caliber / Diameter</label><input class="form-input" id="i-caliber" placeholder='7mm / .284"'></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Cartridge</label><input class="form-input" id="i-cartridge" placeholder="7 PRC"></div>
+      <div class="form-group"><label class="form-lbl">Weight (gr)</label><input class="form-input" id="i-weight" type="number" placeholder="160"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-lbl">Application</label>
+        <select class="form-select" id="i-app">
+          <option value="">— Select —</option>
+          ${['Varmints','Med-Large Game','Dangerous Game','Target / Match','Plinking / Practice','Home Defense / CCW'].map(o => `<option>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-lbl">Quantity (ct)</label><input class="form-input" id="i-qty" type="number" placeholder="100"></div>
+    </div>
+    <div class="form-group"><label class="form-lbl">Notes</label><input class="form-input" id="i-notes" placeholder="Model name, lot, observations…"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-amber" onclick="saveBullet()">Add Bullets</button>
+    </div>
+  </div>`);
+}
+
+function saveBullet() {
+  const g = x => (document.getElementById(x)||{}).value||'';
+  const item = { id: uid(), brand: g('i-brand'), caliber: g('i-caliber'), cartridge: g('i-cartridge'), weight: g('i-weight'), application: g('i-app'), qty: g('i-qty'), notes: g('i-notes') };
+  if (!item.brand.trim()) { alert('Brand required.'); return; }
+  DB.inventory.bullets.push(item);
+  closeModal(); save(); render();
+}
+
+function deleteInventory(cat, id) {
+  if (!confirm('Remove this item?')) return;
+  DB.inventory[cat] = DB.inventory[cat].filter(x => x.id !== id);
+  save(); render();
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+loadDB();
+</script>
+</body>
+</html>
